@@ -1,4 +1,6 @@
 #! /usr/bin/env python3
+
+# program to generate an atlas covering an entire protein surface
 # test building geodesic distances
 import sys
 import numpy as np
