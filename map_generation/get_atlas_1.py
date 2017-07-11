@@ -4,6 +4,9 @@
 # test building geodesic distances
 import sys
 import numpy as np
+import hydroscores as h
+import hbondscores as hb
+import assignhex as ah
 import time
 import scipy
 import scipy.sparse.csgraph
@@ -34,6 +37,7 @@ def step(x):
 
 
 filename = sys.argv[1]
+domain = filename[:-4]
 txt = open(filename,"r")
 surface = np.empty((0,3))
 direction = np.empty((0,3))
@@ -142,7 +146,7 @@ while len(points_list) > 0:
 		if close_points_index[k] == centre_point:
 			centre_index = k
 			
-	print(orientations[centre_index])
+	#print(orientations[centre_index])
 	
 	
 	
@@ -160,6 +164,12 @@ while len(points_list) > 0:
 			sf = 0
 		geo_coords = np.vstack([geo_coords, [a*sf,b*sf]])		
 		
+	#create a list of the residues and atoms present in map
+	atom_list = []
+	for k in range(len(close_points_index)):	
+		res_seq_atom = base[close_points_index[k]] + ':' + seq[close_points_index[k]] + ':' + atom[close_points_index[k]]
+		if res_seq_atom not in atom_list:
+			atom_list.append(res_seq_atom)
 
 
 	# assign to a hexagonal grid - each point is in a particular hexagonal cell
@@ -170,10 +180,10 @@ while len(points_list) > 0:
 
 	# assign each point in connected_points a hexagonal cell by establishing
 	# which cell centre it's closest to
-'''
+
 	hex_coords = {}
-	for point in connected_points:
-		hex_coords[point] = ah.assign(geo_coords[point][0],geo_coords[point][1],cell_size)
+	for k in range(len(close_points_index)):	
+		hex_coords[k] = ah.assign(geo_coords[k][0],geo_coords[k][1],cell_size)
 
 	#print(hex_coords)	
 
@@ -183,97 +193,102 @@ while len(points_list) > 0:
 	# (dms file gives area associated with each point as 'density' so scale by this area)
 
 	hydro_scores = {}
-	for point in connected_points:
-		lookup = base[index[point]] + atom[index[point]]
-		hydro_scores[point] = h.hscore(lookup) * density[index[point]]
+	for k in range(len(close_points_index)):	
+		lookup = base[close_points_index[k]] + atom[close_points_index[k]]
+		hydro_scores[k] = h.hscore(lookup) * density[close_points_index[k]]
 		
 	# assign each hexagonal cell a total hydrophobicity score
 
 	cell_hydro_scores = {}
-	for point in connected_points:
-		if hex_coords[point] not in cell_hydro_scores:
-			cell_hydro_scores[hex_coords[point]] = hydro_scores[point]
+	for k in range(len(close_points_index)):	
+		if hex_coords[k] not in cell_hydro_scores:
+			cell_hydro_scores[hex_coords[k]] = hydro_scores[k]
 		else:
-			cell_hydro_scores[hex_coords[point]] += hydro_scores[point]
+			cell_hydro_scores[hex_coords[k]] += hydro_scores[k]
 
 	# get h-bonding scores for each point and weight according to sampling 'density' 
 	# (dms file gives area associated with each point as 'density' so scale by this area)
 
 	hbond_scores = {}
-	for point in connected_points:
-		lookup = base[index[point]] + atom[index[point]]
-		hbond_scores[point] = (hb.bondscore(lookup)[0] * density[index[point]] , hb.bondscore(lookup)[1] * density[index[point]])
+	for k in range(len(close_points_index)):	
+		lookup = base[close_points_index[k]] + atom[close_points_index[k]]
+		hbond_scores[k] = (hb.bondscore(lookup)[0] * density[close_points_index[k]] , hb.bondscore(lookup)[1] * density[close_points_index[k]])
 		
 	# assign each hexagonal cell a total h-bond donation score
 
 	cell_donation_scores = {}
-	for point in connected_points:
-		if hex_coords[point] not in cell_donation_scores:
-			cell_donation_scores[hex_coords[point]] = hbond_scores[point][0]
+	for k in range(len(close_points_index)):	
+		if hex_coords[k] not in cell_donation_scores:
+			cell_donation_scores[hex_coords[k]] = hbond_scores[k][0]
 		else:
-			cell_donation_scores[hex_coords[point]] += hbond_scores[point][0]
+			cell_donation_scores[hex_coords[k]] += hbond_scores[k][0]
 
 	# assign each hexagonal cell a total h-bond acceptance score
 
 	cell_acceptance_scores = {}
-	for point in connected_points:
-		if hex_coords[point] not in cell_acceptance_scores:
-			cell_acceptance_scores[hex_coords[point]] = hbond_scores[point][1]
+	for k in range(len(close_points_index)):	
+		if hex_coords[k] not in cell_acceptance_scores:
+			cell_acceptance_scores[hex_coords[k]] = hbond_scores[k][1]
 		else:
-			cell_acceptance_scores[hex_coords[point]] += hbond_scores[point][1]
+			cell_acceptance_scores[hex_coords[k]] += hbond_scores[k][1]
 
-			
+	
 			
 	# standardise orientation for each point by converting to unit vector and scaling for density
+
+	weighted_orientations = {}
+	for k in range(len(close_points_index)):
+		a = orientations[k]
+		weighted_orientations[k] = density[close_points_index[k]] * a / np.sqrt(np.dot(a,a))
 	
-	weighted_orientation = {}
-	for point in connected_points:
-		a = orientation[point]
-		weighted_orientation[point] = density[point] * a / np.sqrt(np.dot(a,a))
+
 
 	# assign each hexagonal cell an orientation unit vector (total of orientation for each point,
 	# result converted to a unit vector)
 
 	cell_orientations = {}
-	for point in connected_points:
-		if hex_coords[point] not in cell_orientations:
-			cell_orientations[hex_coords[point]] = weighted_orientation[point]
+	for k in range(len(close_points_index)):
+		if hex_coords[k] not in cell_orientations:
+			cell_orientations[hex_coords[k]] = weighted_orientations[k]
 		else:
-			cell_orientations[hex_coords[point]] += weighted_orientation[point]
+			cell_orientations[hex_coords[k]] += weighted_orientations[k]
 
 	# convert each cell's orientation vector to a unit vector.
 
-	for point in cell_orientations:
-		n = cell_orientations[point]
-		cell_orientations[point] = n / np.sqrt(np.dot(n, n))
+	for cell in cell_orientations:
+		n = cell_orientations[cell]
+		if np.dot(n, n) == 0:
+			cell_orientations[cell] = [1, 0, 0]
+		else:
+			cell_orientations[cell] = n / np.sqrt(np.dot(n, n))
 
 	# find a curvature score for each point in connected_points, using cell_orientations[(0,0)]
 	# as the central normal and (0,0,0) as the centre point
 	
 	curvatures = {}
 	n0 = cell_orientations[(0,0)]
-	for point in connected_points:
-		d = geo_dist[point]
+	for k in range(len(close_points_index)):
+		d = geodesic_distances[centre_point][close_points_index[k]]
 		if d == 0:
-			curvatures[point] = 0
+			curvatures[k] = 0
 		else:
-			n1 = orientation[point]
-			curvatures[point] = np.linalg.norm(n1-n0) * step(np.linalg.norm(n1 + connected_points[point] - n0) - d) / d
-		
+			n1 = orientations[k]
+			curvatures[k] = np.linalg.norm(n1-n0) * step(np.linalg.norm(n1 + close_points[k] - n0) - d) / d
+	
 	# assign each hexagonal cell a total curvature score
 
 	cell_curvature_scores = {}
-	for point in connected_points:
-		if hex_coords[point] not in cell_curvature_scores:
-			cell_curvature_scores[hex_coords[point]] = curvatures[point]
+	for k in range(len(close_points_index)):
+		if hex_coords[k] not in cell_curvature_scores:
+			cell_curvature_scores[hex_coords[k]] = curvatures[k]
 		else:
-			cell_curvature_scores[hex_coords[point]] += curvatures[point]
+			cell_curvature_scores[hex_coords[k]] += curvatures[k]
 
-			
+	
 
 
 	# generate a list of cells with scores; write to .map file
-	# creates a map with 6 concentric hexagonal rings including centre cell
+	# creates a map with 8 concentric hexagonal rings including centre cell
 	
 	s = int(cell_size)
 	cell_list = [(x,y) for x in range(-7*s,8*s,s) for y in range(-7*s,8*s,s) if x+y < 8*s and x+y > -8*s]
@@ -331,9 +346,9 @@ while len(points_list) > 0:
 		cell_aa_count = {}
 		for aa in aa_lookup:
 			cell_aa_count[aa] = 0
-		for point in connected_points:
-			if hex_coords[point] == cell:
-				aa_atom = base[point]
+		for k in range(len(close_points_index)):
+			if hex_coords[k] == cell:
+				aa_atom = base[close_points_index[k]]
 				aa_letter = aa_rev_lookup[aa_atom]
 				cell_aa_count[aa_letter] += 1
 		aa_entry = ' '
@@ -362,8 +377,8 @@ while len(points_list) > 0:
 		file.write(str(cell))
 		file.write(' : ')
 		count = 0
-		for point in connected_points:
-			if hex_coords[point] == cell:
+		for k in range(len(close_points_index)):
+			if hex_coords[k] == cell:
 				count += 1
 		file.write(str(count) + ' : ')
 		if count != 0:
@@ -378,7 +393,7 @@ while len(points_list) > 0:
 		file.write('\n')
 
 	file.close()
-'''
+
 		
 print(maps, time.time()-start)
 	
