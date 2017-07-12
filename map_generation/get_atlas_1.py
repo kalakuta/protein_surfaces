@@ -3,6 +3,7 @@
 # program to generate an atlas covering an entire protein surface
 # test building geodesic distances
 import sys
+import os
 import numpy as np
 import hydroscores as h
 import hbondscores as hb
@@ -35,9 +36,10 @@ def step(x):
 	else:
 		return(x / abs(x))
 
-
+datestamp = time.strftime("%d_%m_%y_%H:%M")
 filename = sys.argv[1]
 domain = filename[:-4]
+os.mkdir('runs/%s_%s' % (domain, datestamp))
 txt = open(filename,"r")
 surface = np.empty((0,3))
 direction = np.empty((0,3))
@@ -75,7 +77,7 @@ sparse_distances = scipy.sparse.csr_matrix(distances)
 
 #create matrix of geodesic distances
 geodesic_distances = scipy.sparse.csgraph.dijkstra(sparse_distances)
-
+print(time.time() - start)
 ##	print('dijsktra done. Total run time = ' + str(time.time() - start) + ' seconds')
 
 maps = 0
@@ -360,7 +362,7 @@ while len(points_list) > 0:
 			
 			
 
-	file = open('./runs/%s_%s.map' % (domain,centre_point), 'w+')
+	file = open('./runs/%s_%s/%s_%s.map' % (domain, datestamp, domain, centre_point), 'w+')
 	file.write(domain + '\t')
 	file.write(str(centre_point) + '\t')
 	file.write(str(cell_size) + '\t')
