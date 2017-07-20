@@ -9,7 +9,7 @@ import hydroscores as h
 import hbondscores as hb
 import assignhex as ah
 import time
-import scipy
+#import scipy
 import scipy.sparse.csgraph
 import scipy.spatial.distance
 
@@ -78,21 +78,18 @@ sparse_distances = scipy.sparse.csr_matrix(distances)
 #create matrix of geodesic distances
 geodesic_distances = scipy.sparse.csgraph.dijkstra(sparse_distances)
 print(time.time() - start)
-##	print('dijsktra done. Total run time = ' + str(time.time() - start) + ' seconds')
+
 
 maps = 0
 while len(points_list) > 0:
 	maps += 1
-	#print(len(points_list))
-	#print(time.time()-start)
 	centre_point = np.random.choice(points_list)
 	origin = surface[centre_point]
 	
-	# reduce points_list set to points more than 7 angstroms from centre point
+	# reduce points_list set to points more than 8 angstroms from centre point
 	for j in range(size):
 		a = surface[j]
-		b = surface[centre_point]
-		if np.linalg.norm(a-b) < 8:
+		if np.linalg.norm(a - origin) <= 8:
 			if j in points_list:
 				points_list.remove(j)
 	
@@ -110,17 +107,13 @@ while len(points_list) > 0:
 			orientations = np.vstack([orientations, direction[j]])
 			close_points_index[k] = j
 			k += 1
-	
-	
-	centre_index = -1
-	for k in range(len(close_points_index)):
-		if close_points_index[k] == centre_point:
-			centre_index = k
+
 			
 	#translate all points in close_points to have centre_point as origin
-	for j in range(len(close_points_index)):
-		close_points[j] = close_points[j] - origin
-
+	
+	close_points = close_points - origin
+	
+	
 	#find average normal of points in close_points
 	
 	normal = np.asarray([0,0,0])
@@ -142,15 +135,6 @@ while len(points_list) > 0:
 	
 	close_points = np.transpose(np.dot(r, np.transpose(close_points)))
 	orientations = np.transpose(np.dot(r, np.transpose(orientations)))
-	
-	centre_index = -1
-	for k in range(len(close_points_index)):
-		if close_points_index[k] == centre_point:
-			centre_index = k
-			
-	#print(orientations[centre_index])
-	
-	
 	
 
 	# project each point in reduced set onto x-y plane
@@ -186,9 +170,6 @@ while len(points_list) > 0:
 	hex_coords = {}
 	for k in range(len(close_points_index)):	
 		hex_coords[k] = ah.assign(geo_coords[k][0],geo_coords[k][1],cell_size)
-
-	#print(hex_coords)	
-
 
 
 	# get hydrophobicity score for each point and weight according to sampling 'density'
