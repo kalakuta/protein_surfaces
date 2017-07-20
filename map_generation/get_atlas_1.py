@@ -191,51 +191,43 @@ while len(points_list) > 0:
 
 
 
-	# get hydrophobicity score for each point and weight according to sampling 'density' 
+	# get hydrophobicity score for each point and weight according to sampling 'density'
+	# get h-bonding scores for each point and weight according to sampling 'density'  
 	# (dms file gives area associated with each point as 'density' so scale by this area)
 
 	hydro_scores = {}
+	hbond_scores = {}	
 	for k in range(len(close_points_index)):	
 		lookup = base[close_points_index[k]] + atom[close_points_index[k]]
 		hydro_scores[k] = h.hscore(lookup) * density[close_points_index[k]]
-		
-	# assign each hexagonal cell a total hydrophobicity score
+		hbond_scores[k] = (hb.bondscore(lookup)[0] * density[close_points_index[k]] , hb.bondscore(lookup)[1] * density[close_points_index[k]])		
 
+
+	# assign each hexagonal cell a total hydrophobicity score
+	# assign each hexagonal cell a total h-bond donation score
+	# assign each hexagonal cell a total h-bond acceptance score
+		
 	cell_hydro_scores = {}
+	cell_donation_scores = {}
+	cell_acceptance_scores = {}
+		
 	for k in range(len(close_points_index)):	
 		if hex_coords[k] not in cell_hydro_scores:
 			cell_hydro_scores[hex_coords[k]] = hydro_scores[k]
 		else:
 			cell_hydro_scores[hex_coords[k]] += hydro_scores[k]
 
-	# get h-bonding scores for each point and weight according to sampling 'density' 
-	# (dms file gives area associated with each point as 'density' so scale by this area)
-
-	hbond_scores = {}
-	for k in range(len(close_points_index)):	
-		lookup = base[close_points_index[k]] + atom[close_points_index[k]]
-		hbond_scores[k] = (hb.bondscore(lookup)[0] * density[close_points_index[k]] , hb.bondscore(lookup)[1] * density[close_points_index[k]])
-		
-	# assign each hexagonal cell a total h-bond donation score
-
-	cell_donation_scores = {}
-	for k in range(len(close_points_index)):	
 		if hex_coords[k] not in cell_donation_scores:
 			cell_donation_scores[hex_coords[k]] = hbond_scores[k][0]
 		else:
 			cell_donation_scores[hex_coords[k]] += hbond_scores[k][0]
 
-	# assign each hexagonal cell a total h-bond acceptance score
-
-	cell_acceptance_scores = {}
-	for k in range(len(close_points_index)):	
 		if hex_coords[k] not in cell_acceptance_scores:
 			cell_acceptance_scores[hex_coords[k]] = hbond_scores[k][1]
 		else:
 			cell_acceptance_scores[hex_coords[k]] += hbond_scores[k][1]
-
-	
 			
+					
 	# standardise orientation for each point by converting to unit vector and scaling for density
 
 	weighted_orientations = {}
