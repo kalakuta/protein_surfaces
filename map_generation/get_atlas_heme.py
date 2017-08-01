@@ -169,7 +169,7 @@ while len(points_list) > 0:
 
 	hex_coords = {}
 	for k in range(len(close_points_index)):	
-		hex_coords[k] = ah.assign(geo_coords[k][0], geo_coords[k][1], cell_size)
+		hex_coords[k] = ah.assign(geo_coords[k][0],geo_coords[k][1],cell_size)
 
 
 	# get hydrophobicity score for each point and weight according to sampling 'density'
@@ -184,7 +184,6 @@ while len(points_list) > 0:
 		lookup = base[j] + atom[j]
 		hydro_scores[k] = h.hscore(lookup) * dens
 		hbond_scores[k] = (hb.bondscore(lookup)[0] * dens , hb.bondscore(lookup)[1] * dens)		
-		
 
 
 	# assign each hexagonal cell a total hydrophobicity score
@@ -358,7 +357,6 @@ while len(points_list) > 0:
 	for entry in atom_list:
 		file.write(entry + '\t')
 	file.write('\n')
-	
 
 	for cell in cell_list:
 		file.write(str(cell))
