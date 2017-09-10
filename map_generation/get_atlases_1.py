@@ -36,11 +36,17 @@ def step(x):
 	else:
 		return(x / abs(x))
 
+#identify atlases already completed
+so_far = []
+for folder in os.listdir("runs/"):
+	so_far.append(folder[:5])
 
+ 
 for pdb_file in os.listdir(sys.argv[1]):
 	datestamp = time.strftime("%d_%m_%y_%H:%M")
 	filename = sys.argv[1] + '/' + pdb_file
-	domain = pdb_file[:-10]
+	domain = pdb_file[:-4]
+	if domain in so_far: continue
 	os.mkdir('runs/%s_%s' % (domain, datestamp))
 	txt = open(filename,"r")
 	surface = np.empty((0,3))
@@ -287,9 +293,11 @@ for pdb_file in os.listdir(sys.argv[1]):
 		'R':'ARG',
 		'N':'ASN',
 		'D':'ASP',
+		'B':'ASX',
 		'C':'CYS',
 		'E':'GLU',
 		'Q':'GLN',
+		'Z':'GLX',
 		'G':'GLY',
 		'H':'HIS',
 		'I':'ILE',
@@ -310,9 +318,11 @@ for pdb_file in os.listdir(sys.argv[1]):
 		'ARG':'R',
 		'ASN':'N',
 		'ASP':'D',
+		'ASX':'B',
 		'CYS':'C',
 		'GLU':'E',
 		'GLN':'Q',
+		'GLX':'Z',
 		'GLY':'G',
 		'HIS':'H',
 		'ILE':'I',
