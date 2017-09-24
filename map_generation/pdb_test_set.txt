@@ -1,0 +1,11 @@
+5 randomly picked pdb domains from the non-reduntant
+heme set
+
+generated 10:26am 24/09/2017
+
+1IZOA
+3D1KA
+2IVFC
+2E3BA
+1U5UA
+
