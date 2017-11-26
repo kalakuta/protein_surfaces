@@ -32,7 +32,8 @@ def rotation_matrix(axis, theta):
                      [2*(bd+ac), 2*(cd-ab), aa+dd-bb-cc]])
 
 def rotate_onto_z(vector):
-	
+	if vector[0] == 0 and vector[1] == 0:
+		return np.identity(3)
 	#gives the rotation matrix to rotate a given vector onto [0, 0, 1]
 	axis = [vector[1],-vector[0],0]			# vector (a,-b,0) is perpendicular to (a,b,c) and to (0,0,1)
 	theta = np.arccos(vector[2] / np.sqrt(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2]))
@@ -69,6 +70,7 @@ while True:
 		density[i] = float(a8)
 		i += 1
 txt.close()
+
 
 points_list = list(range(i))
 size = i
@@ -159,20 +161,20 @@ while len(points_list) > 0:
 		for j in range(len(path)):
 			path_points = np.vstack([path_points, surface[path[j]]])
 			path_directions = np.vstack([path_directions, direction[path[j]]])
-
-		if j == 1:			#sort this out...
-			geo_coords = np.vstack([geo_coords, [0, 0]])
+		if len(path) == 1:
+			geo_coords = np.vstack([geo_coords, [0., 0.]])
 		else:
 			coord = np.asarray([0., 0.])
 			for j in range(len(path) - 1):
 				path_points = path_points - surface[path[j]]
-				r = rotate_onto_z(direction[path[j]])  ##causing divide by zero error...
+				r = rotate_onto_z(direction[path[j]])  
 				path_directions = np.transpose(np.dot(r, np.transpose(path_directions)))
 				g = geodesic_distances[path[j]][path[j+1]]
-				euc = np.sqrt(np.dot(path_points[j+1], path_points[j+1]))
+				euc = np.sqrt(np.dot(path_points[j+1], path_points[j+1])) # try changing this.
 				coord += (g / euc) * np.asarray([path_points[j+1][0],path_points[j+1][1]])
 			geo_coords = np.vstack([geo_coords, [coord]])
-	print(geo_coords)		
+		print(geo_coords)
+
 
 		
 			
@@ -180,22 +182,9 @@ while len(points_list) > 0:
 			
 		
 
-'''
-	# project each point in reduced set onto x-y plane
-	# and scale by geodesic distance from centre_point
-	geo_coords = np.empty((0, 2))
-	for k in range(len(close_points_index)):	
-		a, b = close_points[k][0], close_points[k][1]
-		euc_dist = np.sqrt(a * a + b * b)
-		geo_dist = geodesic_distances[centre_point][close_points_index[k]]
-		if euc_dist != 0:
-			sf = geo_dist / euc_dist
-		else:
-			sf = 0
-		geo_coords = np.vstack([geo_coords, [a*sf,b*sf]])		
-'''
 
-'''	
+
+
 	#create a list of the residues and atoms present in map
 	atom_list = []
 	for k in range(len(close_points_index)):	
@@ -429,5 +418,4 @@ while len(points_list) > 0:
 
 		
 print(maps, time.time()-start)
-	
-'''
+
