@@ -34,10 +34,11 @@ def rotation_matrix(axis, theta):
 def rotate_onto_z(vector):
 	if vector[0] == 0 and vector[1] == 0:
 		return np.identity(3)
-	#gives the rotation matrix to rotate a given vector onto [0, 0, 1]
-	axis = [vector[1],-vector[0],0]			# vector (a,-b,0) is perpendicular to (a,b,c) and to (0,0,1)
-	theta = np.arccos(vector[2] / np.sqrt(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2]))
-	return rotation_matrix(axis, theta)
+	else
+		#gives the rotation matrix to rotate a given vector onto [0, 0, 1]
+		axis = [vector[1],-vector[0],0]			# vector (a,-b,0) is perpendicular to (a,b,c) and to (0,0,1)
+		theta = np.arccos(vector[2] / np.sqrt(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2]))
+		return rotation_matrix(axis, theta)
 
 def step(x):
 	if x == 0: return(1)
@@ -120,33 +121,7 @@ while len(points_list) > 0:
 			k += 1
 
 			
-	#translate all points in close_points to have centre_point as origin
-	
-	#close_points = close_points - origin
-	
-	#normal = direction[centre_point]
-	
-	
-	
 
-	# rotate all points in close_points so that normal is parallel to (0,0,1)
-	# later, points will be projected on x-y plane
-	# also rotate direction vector of each point as orientation
-
-	# create rotation axis perpendicular to normal and to (0,0,1)
-	#axis = [normal[1],-normal[0],0]			# vector (a,-b,0) is perpendicular to (a,b,c) and to (0,0,1)
-	# calculate required angle of rotation
-	#theta = np.arccos(normal[2] / np.sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]))
-	# get rotation matrix
-	#r = rotation_matrix(axis, theta)
-	
-	#rotate close_points and orientations
-	
-	#close_points = np.transpose(np.dot(r, np.transpose(close_points)))
-	#orientations = np.transpose(np.dot(r, np.transpose(orientations)))
-	
-	# for each point in connected points, find path from centre_point
-	# and use this to generate 2D coordinates
 	geo_coords = np.empty((0, 2))
 	for i in range(k):
 		path = []
@@ -161,33 +136,30 @@ while len(points_list) > 0:
 		for j in range(len(path)):
 			path_points = np.vstack([path_points, surface[path[j]]])
 			path_directions = np.vstack([path_directions, direction[path[j]]])
+
 		if len(path) == 1:
 			geo_coords = np.vstack([geo_coords, [0., 0.]])
 		else:
 			coord = np.asarray([0., 0.])
 			for j in range(len(path) - 1):
 				path_points = path_points - surface[path[j]]
-				r = rotate_onto_z(direction[path[j]])  
+				r = rotate_onto_z(direction[path[j]])
 				path_directions = np.transpose(np.dot(r, np.transpose(path_directions)))
 				g = geodesic_distances[path[j]][path[j+1]]
-				euc = np.sqrt(np.dot(path_points[j+1], path_points[j+1])) # try changing this.
+				euc = np.sqrt(np.dot(path_points[j+1], path_points[j+1]))
 				coord += (g / euc) * np.asarray([path_points[j+1][0],path_points[j+1][1]])
 			geo_coords = np.vstack([geo_coords, [coord]])
 		print(geo_coords)
 
 
-		
-			
-			
-			
-		
+
 
 
 
 
 	#create a list of the residues and atoms present in map
 	atom_list = []
-	for k in range(len(close_points_index)):	
+	for k in range(len(close_points_index)):
 		res_seq_atom = base[close_points_index[k]] + ':' + seq[close_points_index[k]] + ':' + atom[close_points_index[k]]
 		if res_seq_atom not in atom_list:
 			atom_list.append(res_seq_atom)
@@ -203,22 +175,22 @@ while len(points_list) > 0:
 	# which cell centre it's closest to
 
 	hex_coords = {}
-	for k in range(len(close_points_index)):	
+	for k in range(len(close_points_index)):
 		hex_coords[k] = ah.assign(geo_coords[k][0], geo_coords[k][1], cell_size)
 
 
 	# get hydrophobicity score for each point and weight according to sampling 'density'
-	# get h-bonding scores for each point and weight according to sampling 'density'  
+	# get h-bonding scores for each point and weight according to sampling 'density'
 	# (dms file gives area associated with each point as 'density' so scale by this area)
 
 	hydro_scores = {}
-	hbond_scores = {}	
+	hbond_scores = {}
 	for k in range(len(close_points_index)):
 		j = close_points_index[k]
 		dens = density[j]
 		lookup = base[j] + atom[j]
 		hydro_scores[k] = h.hscore(lookup) * dens
-		hbond_scores[k] = (hb.bondscore(lookup)[0] * dens , hb.bondscore(lookup)[1] * dens)		
+		hbond_scores[k] = (hb.bondscore(lookup)[0] * dens , hb.bondscore(lookup)[1] * dens)
 		
 
 
@@ -231,7 +203,7 @@ while len(points_list) > 0:
 	cell_acceptance_scores = {}
 		
 	for k in range(len(close_points_index)):
-		cell_k = hex_coords[k]	
+		cell_k = hex_coords[k]
 		if cell_k not in cell_hydro_scores:
 			cell_hydro_scores[cell_k] = hydro_scores[k]
 		else:
@@ -282,7 +254,7 @@ while len(points_list) > 0:
 	# find a curvature score for each point in connected_points, using n0
 	# as the central normal and (0,0,0) as the centre point
 	# scale for density
-	n0 = cell_orientations[(0, 0)]	
+	n0 = cell_orientations[(0, 0)]
 	curvatures = {}
 	for k in range(len(close_points_index)):
 		point = close_points[k]
@@ -407,7 +379,7 @@ while len(points_list) > 0:
 			file.write(str(cell_hydro_scores[cell]) + ' : ')
 			file.write(str(cell_acceptance_scores[cell]) + ' : ')
 			file.write(str(cell_donation_scores[cell]) + ' : ')
-			file.write(str(cell_orientations[cell][0]) + ', ' + str(cell_orientations[cell][1]) + ', ' + str(cell_orientations[cell][2]) + ' : ') 
+			file.write(str(cell_orientations[cell][0]) + ', ' + str(cell_orientations[cell][1]) + ', ' + str(cell_orientations[cell][2]) + ' : ')
 			file.write(str(cell_curvature_scores[cell]) + ' : ')
 			file.write(cell_aa_makeup[cell])
 		else:
