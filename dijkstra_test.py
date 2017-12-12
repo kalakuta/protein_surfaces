@@ -5,7 +5,7 @@ import hydroscores as h
 import hbondscores as hb
 import assignhex as ah
 import numpy as np
-import scipy as cp
+import scipy
 import scipy.sparse.csgraph
 
 distances = np.empty((0,5))
