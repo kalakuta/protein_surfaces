@@ -5,6 +5,12 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+def unit(vector):
+	length = np.sqrt(np.dot(vector, vector))
+	if length == 0:
+		return vector
+	else:
+		return(vector / length)
 
 def random_spherical():
 
@@ -14,7 +20,7 @@ def random_spherical():
     return([x, y, z])
     
 def spherical_deflection(p1, p2, p3):
-    angle = np.arccos(np.dot(np.cross(p1, p2),np.cross(p2, p3)))
+    angle = np.arccos(np.dot(unit(np.cross(p1, p2)),unit(np.cross(p2, p3))))
     sense = 0
     if np.dot(np.cross(p1, p2), p3) < 0:
         sense = 1
