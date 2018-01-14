@@ -9,6 +9,9 @@ def unit(vector):
 
 
 def deflection(p1, n1, p2, n2, p3):
+	# calculates the angle of deflection when travelling the path 
+	# from point p1 -> p2 in the plane parallel to n1 and then from 
+	# p2 -> p3 in the plane parallel to n2
 	n1 = unit(n1)
 	n2 = unit(n2)
 	r1 = unit(p2 - p1)

@@ -18,7 +18,8 @@ start = (time.time())
 
 def rotation_matrix(axis, theta):
     
-    # Use the Euler-Rodrigues formula to establish a rotation of theta radians about axis
+    # Use the Euler-Rodrigues formula to establish
+	# a rotation of theta radians about axis
     
     axis = np.asarray(axis)
     theta = np.asarray(theta)
@@ -44,6 +45,32 @@ def step(x):
 	if x == 0: return(1)
 	else:
 		return(x / abs(x))
+
+
+def unit(vector):
+	length = np.sqrt(np.dot(vector, vector))
+	if length == 0:
+		return vector
+	else:
+		return(vector / length)
+
+
+def deflection(p1, n1, p2, n2, p3):
+	# calculates the angle of deflection when travelling the path 
+	# from point p1 -> p2 in the plane parallel to n1 and then the path
+	# from p2 -> p3 in the plane parallel to n2
+	n1 = unit(n1)
+	n2 = unit(n2)
+	r1 = unit(p2 - p1)
+	r2 = unit(p3 - p2)
+	angle = np.arccos(np.dot(unit(np.cross(n1, r1)),unit(np.cross(n2, r2))))
+	sign = 0
+	if np.dot(np.cross(n1, r1), r2) >= 0:
+		sign = 1
+	else:
+		sign = -1
+	return(angle * sign)
+
 
 datestamp = time.strftime("%d_%m_%y_%H:%M")
 filename = sys.argv[1]
@@ -92,11 +119,13 @@ print(time.time() - start)
 
 
 maps = 0
-while len(points_list) > 0:
+#while len(points_list) > 0:
+for t in range(1):
 	maps += 1
 	centre_point = np.random.choice(points_list)
 	print(centre_point)
 	origin = surface[centre_point]
+	print(origin)
 	
 	# reduce points_list set to points more than 8 angstroms (geodesic) from centre point
 	# increase this if possible?  In order to reduce size of atlas...
@@ -107,23 +136,35 @@ while len(points_list) > 0:
 	
 	# create map centred at centre_point
 	
-	# create array of points within 23 angstroms (geodesic) of centre_point
+	# create array of the k points within 23 angstroms (geodesic) of centre_point
 	
 	close_points = np.empty((0,3))
 	orientations = np.empty((0,3))
 	close_points_index = {}
+	reverse_index = {}
 	k=0
 	for j in range(size):
 		if geodesic_distances[centre_point][j] < 23:
 			close_points = np.vstack([close_points, surface[j]])
 			orientations = np.vstack([orientations, direction[j]])
 			close_points_index[k] = j
+			reverse_index[j] = k
 			k += 1
 
-			
+	# translate all points so centre_point has coordinates (0, 0, 0)
+
+	close_points -= origin
+
+	# rotate all points and normals so that centre_points normal is
+	# parallel to (0, 0, 1)
+	
+	r = rotate_onto_z(direction[centre_point])
+	close_points = np.transpose(np.dot(r, np.transpose(close_points)))
+	orientations = np.transpose(np.dot(r, np.transpose(orientations)))		
 
 	geo_coords = np.empty((0, 2))
 	for i in range(k):
+		# get geodesic path to point i
 		path = []
 		predecessor = close_points_index[i]
 		while predecessor != centre_point:
@@ -131,26 +172,38 @@ while len(points_list) > 0:
 			predecessor = predecessors[centre_point][predecessor]
 		path = [centre_point] + path
 
+
+		# index path by close_points
+		path = [reverse_index[point] for point in path]
+
+
 		path_points = np.empty((0, 3))
 		path_directions = np.empty((0, 3))
 		for j in range(len(path)):
-			path_points = np.vstack([path_points, surface[path[j]]])
-			path_directions = np.vstack([path_directions, direction[path[j]]])
-
+			path_points = np.vstack([path_points, close_points[path[j]]])
+			path_directions = np.vstack([path_directions, orientations[path[j]]])
+		print(path_points)
 		if len(path) == 1:
 			geo_coords = np.vstack([geo_coords, [0., 0.]])
 		else:
 			coord = np.asarray([0., 0.])
-			for j in range(len(path) - 1):
-				path_points = path_points - surface[path[j]]
-				r = rotate_onto_z(direction[path[j]])
-				path_points = np.transpose(np.dot(r, np.transpose(path_points)))
-				path_directions = np.transpose(np.dot(r, np.transpose(path_directions)))
-				g = geodesic_distances[path[j]][path[j+1]]
-				euc = np.sqrt(np.dot(path_points[j+1], path_points[j+1]))
-				coord += (g / euc) * np.asarray([path_points[j+1][0],path_points[j+1][1]])
+			theta = 0.
+			previous = np.asarray([-1., 0., 0.])
+			prev_norm = np.asarray([0., 0., 1.])
+			for l in range(len(path) - 1):
+				g = geodesic_distances[close_points_index[path[l]], close_points_index[path[l+1]]]
+				print(g)
+				current = path_points[l]
+				current_norm = path_directions[l]
+				next = path_points[l + 1]
+				theta += deflection(previous, prev_norm, current, current_norm, next)
+				print(theta)		
+				coord += np.asarray([g * np.cos(theta), g* np.sin(theta)])
+				print(coord)
+				previous = current
+				previous_norm = current_norm
 			geo_coords = np.vstack([geo_coords, [coord]])
-		#print(geo_coords)
+		print(geo_coords)
 
 
 
