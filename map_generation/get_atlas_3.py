@@ -56,7 +56,7 @@ def unit(vector):
 
 
 def deflection(p1, n1, p2, n2, p3):
-	# calculates the angle of deflection when travelling the path 
+	# calculates the angle of deflection when travelling the path
 	# from point p1 -> p2 in the plane parallel to n1 and then the path
 	# from p2 -> p3 in the plane parallel to n2
 	n1 = unit(n1)
@@ -72,7 +72,7 @@ def deflection(p1, n1, p2, n2, p3):
 	return(angle * sign)
 
 
-datestamp = time.strftime("%d_%m_%y_%H:%M")
+datestamp = time.strftime("%d_%m_%y_%H:%M:%S")
 filename = sys.argv[1]
 domain = filename[:-4]
 os.mkdir('runs/%s_%s' % (domain, datestamp))
@@ -119,8 +119,8 @@ print(time.time() - start)
 
 
 maps = 0
-#while len(points_list) > 0:
-for t in range(1):
+while len(points_list) > 0:
+#for t in range(1):
 	maps += 1
 	centre_point = np.random.choice(points_list)
 	print(centre_point)
@@ -155,15 +155,19 @@ for t in range(1):
 
 	close_points -= origin
 
-	# rotate all points and normals so that centre_points normal is
+	# rotate all points and normals so that centre_point's normal is
 	# parallel to (0, 0, 1)
 	
 	r = rotate_onto_z(direction[centre_point])
 	close_points = np.transpose(np.dot(r, np.transpose(close_points)))
-	orientations = np.transpose(np.dot(r, np.transpose(orientations)))		
+	orientations = np.transpose(np.dot(r, np.transpose(orientations)))
 
 	geo_coords = np.empty((0, 2))
+	ratios = []
 	for i in range(k):
+		# get geodesic and euclidean distances from centre_point to point i
+		geo = geodesic_distances[centre_point, close_points_index[i]]
+		euc = scipy.spatial.distance.pdist(np.vstack([origin, surface[close_points_index[i]]]))
 		# get geodesic path to point i
 		path = []
 		predecessor = close_points_index[i]
@@ -182,28 +186,33 @@ for t in range(1):
 		for j in range(len(path)):
 			path_points = np.vstack([path_points, close_points[path[j]]])
 			path_directions = np.vstack([path_directions, orientations[path[j]]])
-		print(path_points)
-		if len(path) == 1:
-			geo_coords = np.vstack([geo_coords, [0., 0.]])
-		else:
-			coord = np.asarray([0., 0.])
+		#print(path_points)
+		coord = np.asarray([0., 0.])
+		if len(path) > 1:
 			theta = 0.
 			previous = np.asarray([-1., 0., 0.])
 			prev_norm = np.asarray([0., 0., 1.])
 			for l in range(len(path) - 1):
 				g = geodesic_distances[close_points_index[path[l]], close_points_index[path[l+1]]]
-				print(g)
 				current = path_points[l]
 				current_norm = path_directions[l]
 				next = path_points[l + 1]
 				theta += deflection(previous, prev_norm, current, current_norm, next)
-				print(theta)		
 				coord += np.asarray([g * np.cos(theta), g* np.sin(theta)])
-				print(coord)
 				previous = current
 				previous_norm = current_norm
-			geo_coords = np.vstack([geo_coords, [coord]])
-		print(geo_coords)
+		geo_coords = np.vstack([geo_coords, [coord]])
+		# get planar euclidean distance of new coordinates
+		x = coord[0]
+		y = coord[1]
+		new_euc = np.sqrt(x * x + y * y)
+		print(geo, euc, new_euc)
+		if geo != 0:
+			ratios.append(new_euc / geo)
+		else:
+			ratios.append(1.)
+	#print(geo_coords)
+	print(np.mean(ratios))
 
 
 
