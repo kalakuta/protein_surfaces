@@ -235,7 +235,9 @@ while len(points_list) > 0:
 		file.write(str(geo_coords[i][0]) + '\t')
 		file.write(str(geo_coords[i][1]) + '\t')
 		file.write(base[point] + '\t' + seq[point] + '\t' + atom[point] + '\t')
-		file.write(str(paths[i]) + '\n')
+		for l in range(len(paths[i])):
+			file.write(str(paths[i][l]) + ' ')
+		file.write('\n')
 
 	file.close()
 
