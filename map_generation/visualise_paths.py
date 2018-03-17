@@ -1,7 +1,7 @@
 import sys
 import random
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
@@ -9,7 +9,9 @@ import matplotlib.pyplot as plt
 mapfile = sys.argv[1]
 txt = open(mapfile,'r')
 line = txt.readline()
-pdb, centre, chain, aa, atom = line.split()
+pdb, centre, chain, aa, atom = line.split()[:5]
+normal = [float(x) for x in line.split()[-3:]]
+print(normal)
 
 coords3D = {}
 coords2D = {}
@@ -25,6 +27,7 @@ while True:
 txt.close()
 
 point = random.choice(list(coords3D.keys()))
+point = '3474'
 path = paths[point]
 file = open('./path_files/%s_%s_%s.kin' % (pdb, centre, point), 'w+')
 file.write('@text\n')
@@ -42,14 +45,20 @@ file.write(coords3D[centre][0] + ' ' + coords3D[centre][1] + ' ' + coords3D[cent
 file.write('@balllist {path points} color=blue radius = 0.2\n')
 length = len(path)
 for i in range(length - 1):
-	file.write(coords3D[path[i + 1]][0] + ' ' + coords3D[path[i + 1]][1] + ' ' + coords3D[path[i + 1]][2] + '\n') 
-#write path from centre to point 
+	file.write(coords3D[path[i + 1]][0] + ' ' + coords3D[path[i + 1]][1] + ' ' + coords3D[path[i + 1]][2] + '\n')
+#write path from centre to point
 file.write('@vectorlist {path_to_point} color=green\n')
-file.write(coords3D[path[0]][0] + ' ' + coords3D[path[0]][1] + ' ' + coords3D[path[0]][2] + ' ') 
+file.write(coords3D[path[0]][0] + ' ' + coords3D[path[0]][1] + ' ' + coords3D[path[0]][2] + ' ')
 for i in range(length - 1):
 	file.write(coords3D[path[i + 1]][0] + ' ' + coords3D[path[i + 1]][1] + ' ' + coords3D[path[i + 1]][2] + '\n')
 	file.write(coords3D[path[i + 1]][0] + ' ' + coords3D[path[i + 1]][1] + ' ' + coords3D[path[i + 1]][2] + ' ')
 file.write(coords3D[path[length - 1]][0] + ' ' + coords3D[path[length - 1]][1] + ' ' + coords3D[path[length - 1]][2] + '\n')
+#write normal vector
+file.write('@vectorlist {centre normal} color=red\n')
+file.write(coords3D[centre][0] + ' ' + coords3D[centre][1] + ' ' + coords3D[centre][2])
+for i in range(3):
+	file.write(' ' + str(float(coords3D[centre][i]) + normal[i]))
+file.write('\n')
 
 file.close()
 
@@ -59,8 +68,8 @@ y = [item[1] for item in path_coords]
 
 fig1 = plt.figure()
 ax1 = fig1.add_subplot(111)
-ax1.set_xlim(-10,10)
-ax1.set_ylim(-10,10)
+ax1.set_xlim(-20,20)
+ax1.set_ylim(-20,20)
 ax1.scatter(x, y)
 ax1.plot(x, y)
 #fig1.show()
