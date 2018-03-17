@@ -143,10 +143,11 @@ print(time.time() - start)
 
 
 maps = 0
-while len(points_list) > 0:
-#for num in range(10):
+#while len(points_list) > 0:
+for num in range(1):
 	maps += 1
-	centre_point = np.random.choice(points_list)
+	# centre_point = np.random.choice(points_list)
+	centre_point = 5752
 	print(centre_point)
 	origin = surface[centre_point]
 	print(origin)
@@ -221,16 +222,23 @@ while len(points_list) > 0:
 			for l in range(len(path) - 1):
 				g = geodesic_distances[close_points_index[path[l]], close_points_index[path[l + 1]]]
 				next = path_points[l + 1]
-				yaw = np.angle(next[0] + next[1] * 1j) # np.angle gives the principle argument of a complex number
-				# so this gives the change in angle of the projection of the path onto the x-y plane
-				theta += yaw
-				coord += np.asarray([g * np.cos(theta), g * np.sin(theta)])
 				if next[0] == 0. and next[1] == 0.:
 					pitch = np.pi / 2
 				else:
 					pitch = angle(next, [next[0], next[1], 0])
+				if next[0] < 0:
+					pitch = np.pi - pitch
+					yaw = np.angle(-next[0] + next[1] *1j)
+				else:
+					yaw = np.angle(next[0] + next[1] * 1j)			
 				if next[2] < 0:
 					pitch = -pitch
+				
+				if (close_points_index[i]) == 3474:
+					print(l, next, yaw, pitch)
+				theta += yaw
+				coord += np.asarray([g * np.cos(theta), g * np.sin(theta)])
+
 				#translate origin onto 'next'
 				path_points -= next
 				#rotate x-axis onto projection of 'current-next' using yaw
@@ -239,6 +247,7 @@ while len(points_list) > 0:
 				r2 = rotation_matrix([0, 1, 0], pitch)
 				R = np.dot(r2, r1)
 				path_points = np.transpose(np.dot(R, np.transpose(path_points)))
+
 		geo_coords = np.vstack([geo_coords, [coord]])
 
 
