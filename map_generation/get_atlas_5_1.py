@@ -143,11 +143,9 @@ print(time.time() - start)
 
 
 maps = 0
-#while len(points_list) > 0:
-for num in range(1):
+while len(points_list) > 0:
 	maps += 1
-	# centre_point = np.random.choice(points_list)
-	centre_point = 5752
+	centre_point = np.random.choice(points_list)
 	print(centre_point)
 	origin = surface[centre_point]
 	print(origin)
@@ -230,12 +228,10 @@ for num in range(1):
 					pitch = np.pi - pitch
 					yaw = np.angle(-next[0] + next[1] *1j)
 				else:
-					yaw = np.angle(next[0] + next[1] * 1j)			
+					yaw = np.angle(next[0] + next[1] * 1j)
 				if next[2] < 0:
 					pitch = -pitch
 				
-				if (close_points_index[i]) == 3474:
-					print(l, next, yaw, pitch)
 				theta += yaw
 				coord += np.asarray([g * np.cos(theta), g * np.sin(theta)])
 

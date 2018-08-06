@@ -27,7 +27,7 @@ while True:
 txt.close()
 
 point = random.choice(list(coords3D.keys()))
-point = '3474'
+#point = '6669'
 path = paths[point]
 file = open('./path_files/%s_%s_%s.kin' % (pdb, centre, point), 'w+')
 file.write('@text\n')
@@ -35,7 +35,7 @@ file.write('This file shows part of the surface of ' + pdb + ' centred at the po
 file.write('@kinemage\n\n')
 
 #write all surface points to file
-file.write('@dotlist {whole_surface} color=gray\n')
+file.write('@balllist {whole_surface} color=black radius = 0.1\n')
 for key in coords3D:
 	file.write(coords3D[key][0] + ' ' + coords3D[key][1] + ' ' + coords3D[key][2] + '\n')
 #highlight centre_point

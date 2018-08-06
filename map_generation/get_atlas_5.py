@@ -69,26 +69,8 @@ def angle(vec1, vec2):
 		return(0.0)
 
 
-def least_squares_plane(points_list):
-	sx, sy, sz = 0, 0, 0
-	sxx, syy, szz = 0, 0, 0
-	sxy, syz, szx = 0, 0, 0
-	for point in points_list:
-		x, y, z = [point[i] for i in range(3)]
-		sx += x
-		sy += y
-		sz += z
-		sxx += x * x
-		syy += y * y
-		szz += z * z
-		sxy += x * y
-		syz += y * z
-		szx += z * x
-	A = np.asarray([[sxx, sxy, szx], [sxy, syy, syz], [szx, syz, szz]])
-	normal = np.dot(np.linalg.inv(A), [sx, sy, sz])
-	d = 1 / np.sqrt(np.dot(normal, normal))
-	normal = normal * d
-	return[normal, d]
+
+
 
 datestamp = time.strftime("%d_%m_%y_%H:%M:%S")
 filename = sys.argv[1]
@@ -221,8 +203,7 @@ while len(points_list) > 0:
 			for l in range(len(path) - 1):
 				g = geodesic_distances[close_points_index[path[l]], close_points_index[path[l + 1]]]
 				next = path_points[l + 1]
-				yaw = np.angle(next[0] + next[1] * 1j) # np.angle gives the principle argument of a complex number
-				# so this gives the change in angle of the projection of the path onto the x-y plane
+				yaw = np.angle(next[0] + next[1] * 1j)
 				theta += yaw
 				coord += np.asarray([g * np.cos(theta), g * np.sin(theta)])
 				if next[0] == 0. and next[1] == 0.:

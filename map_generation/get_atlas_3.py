@@ -5,11 +5,11 @@
 import sys
 import os
 import numpy as np
+np.seterr(all='raise')
 import hydroscores as h
 import hbondscores as hb
 import assignhex as ah
 import time
-#import scipy
 import scipy.sparse.csgraph
 import scipy.spatial.distance
 
@@ -33,8 +33,10 @@ def rotation_matrix(axis, theta):
                      [2*(bd+ac), 2*(cd-ab), aa+dd-bb-cc]])
 
 def rotate_onto_z(vector):
-	if vector[0] == 0 and vector[1] == 0:
+	if vector[0] == 0 and vector[1] == 0 and vector[2] >= 0:
 		return np.identity(3)
+	elif vector[0] == 0 and vector[1] == 0 and vector[2] < 0:
+		return -np.identity(3)
 	else:
 		#gives the rotation matrix to rotate a given vector onto [0, 0, 1]
 		axis = [vector[1],-vector[0],0]			# vector (a,-b,0) is perpendicular to (a,b,c) and to (0,0,1)
@@ -63,7 +65,13 @@ def deflection(p1, n1, p2, n2, p3):
 	n2 = unit(n2)
 	r1 = unit(p2 - p1)
 	r2 = unit(p3 - p2)
-	angle = np.arccos(np.dot(unit(np.cross(n1, r1)),unit(np.cross(n2, r2))))
+	try:
+		angle = np.arccos(np.dot(unit(np.cross(n1, r1)),unit(np.cross(n2, r2))))
+	except FloatingPointError:
+		if np.dot(unit(np.cross(n1, r1)),unit(np.cross(n2, r2))) >= 1:
+			angle = 0.
+		elif np.dot(unit(np.cross(n1, r1)),unit(np.cross(n2, r2))) <= -1:
+			angle = np.pi
 	sign = 0
 	if np.dot(np.cross(n1, r1), r2) >= 0:
 		sign = 1
@@ -84,8 +92,10 @@ base = {}
 seq = {}
 density = {}
 i = 0
+
+# read in surface records from .dms file
+
 while True:
-#for i in range(10):
 	line = txt.readline()
 	if not line: break
 	if 'A\n' not in line:
@@ -107,11 +117,14 @@ size = i
 #generate matrix of distances between all pairs of surface points
 distances = scipy.spatial.distance.squareform(scipy.spatial.distance.pdist(surface))
 
+
 #replace distances over 1.5 with 0 [no direct connection in graph]
 distances[distances > 1.5] = 0.
 
 #create scipy sparse matrix with zeroes replaced by blanks
 sparse_distances = scipy.sparse.csr_matrix(distances)
+
+
 
 #create matrix of geodesic distances
 geodesic_distances, predecessors = scipy.sparse.csgraph.dijkstra(sparse_distances, return_predecessors=True)
@@ -119,8 +132,8 @@ print(time.time() - start)
 
 
 maps = 0
-while len(points_list) > 0:
-#for t in range(1):
+#while len(points_list) > 0:
+for num in range(10):
 	maps += 1
 	centre_point = np.random.choice(points_list)
 	print(centre_point)
@@ -206,7 +219,9 @@ while len(points_list) > 0:
 		x = coord[0]
 		y = coord[1]
 		new_euc = np.sqrt(x * x + y * y)
-		print(geo, euc, new_euc)
+		#if np.isnan(new_euc):
+		#	print(previous, prev_norm, current, current_norm, next)
+		#print(geo, euc[0], new_euc)
 		if geo != 0:
 			ratios.append(new_euc / geo)
 		else:
