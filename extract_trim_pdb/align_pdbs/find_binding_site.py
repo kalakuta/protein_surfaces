@@ -32,11 +32,25 @@ site_lists = {}
 for site in site_identifiers:
 	for line in lines:
 		if line.split()[0] == "SITE":
-			if line.split()[2] == site:
-				if site not in site_lists:
-					site_lists[site] = line.split()[4:]
-				else:
-					site_lists[site] = site_lists[site] + line.split()[4:]
+			if line[11:14] == site:
+				records = line[18:]
+				for i in range(len(records) // 11):
+					record = records[i * 11: i * 11 + 11]
+					if record != "           ":
+						aa = record[0:3]
+						seq = record[5:9].strip()
+					else: continue
+					if aa == 'HOH':
+						continue
+					if site not in site_lists:
+						site_lists[site] = [[aa, seq]]
+					else:
+						site_lists[site].append([aa, seq])
+
+for key in site_lists:
+	print(key)
+	for i in range(len(site_lists[key])):
+		print(site_lists[key][i][0], site_lists[key][i][1])
 
 '''
 make format match .map files
