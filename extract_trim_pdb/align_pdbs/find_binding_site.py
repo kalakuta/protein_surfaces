@@ -38,10 +38,9 @@ for site in site_identifiers:
 					record = records[i * 11: i * 11 + 11]
 					if record != "           ":
 						aa = record[0:3]
-						seq = record[5:9].strip()
+						seq = record[5:9].strip() + record[4] 
 					else: continue
-					if aa == 'HOH':
-						continue
+					if aa == 'HOH': continue
 					if site not in site_lists:
 						site_lists[site] = [[aa, seq]]
 					else:
@@ -52,9 +51,6 @@ for key in site_lists:
 	for i in range(len(site_lists[key])):
 		print(site_lists[key][i][0], site_lists[key][i][1])
 
-'''
-make format match .map files
-'''			
 
 		
 	
